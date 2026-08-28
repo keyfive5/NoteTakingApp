@@ -1,0 +1,45 @@
+{
+  "name": "sift-notes",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:tokenize && npm run test:search && npm run test:markdown && npm run test:store && npm run test:links && npm run test:layout",
+    "test:tokenize": "node --experimental-strip-types scripts/test-tokenize.mjs",
+    "test:search": "node --experimental-strip-types scripts/test-search.mjs",
+    "test:markdown": "node --experimental-strip-types scripts/test-markdown.mjs",
+    "test:store": "node --experimental-strip-types scripts/test-store.mjs",
+    "test:links": "node --experimental-strip-types scripts/test-links.mjs",
+    "test:layout": "node --experimental-strip-types scripts/test-layout.mjs",
+    "bench": "node --experimental-strip-types scripts/bench-search.mjs",
+    "assets": "node scripts/make-assets.mjs",
+    "screenshots": "node scripts/make-screenshots.mjs"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.8",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "expo": "~57.0.11",
+    "expo-clipboard": "~57.0.1",
+    "expo-constants": "~57.0.9",
+    "expo-file-system": "~57.0.2",
+    "expo-haptics": "~57.0.1",
+    "expo-local-authentication": "~57.0.2",
+    "expo-sharing": "~57.0.10",
+    "expo-status-bar": "~57.0.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-native": "^0.86.2",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "^15.15.4",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "sharp": "^0.35.4",
+    "typescript": "^5.9.3"
+  }
+}

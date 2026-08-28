@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Sift",
+    "slug": "sift-notes",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "sift",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FBFAF7",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FBFAF7"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hasanzafar.sift",
+      "buildNumber": "1",
+      "requireFullScreen": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Sift",
+        "NSFaceIDUsageDescription": "Sift uses Face ID so a locked note can only be opened by you."
+      }
+    },
+    "android": {
+      "package": "com.hasanzafar.sift",
+      "adaptiveIcon": {
+        "backgroundColor": "#141311",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Sift uses Face ID so a locked note can only be opened by you."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    "owner": "keyfive"
+  }
+}
