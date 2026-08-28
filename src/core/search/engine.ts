@@ -567,6 +567,64 @@ export function preview(body: string, max = SNIPPET_LEN): string {
 }
 
 /**
+ * Blank out Markdown syntax by replacing it with spaces of the *same length*.
+ *
+ * Equal-length replacement is the whole trick: every character in the result
+ * sits at the same index it did in the source, so highlight offsets computed
+ * against the original body stay valid against the blanked version. Deleting
+ * the markers instead would silently shift every match.
+ */
+function blankMarkup(body: string): string {
+  const pad = (m: string) => ' '.repeat(m.length);
+  return body
+    .replace(/^#{1,6}[ \t]+/gm, pad)
+    .replace(/^[ \t]*[-*][ \t]+\[[ xX]\][ \t]*/gm, pad)
+    .replace(/^[ \t]*[-*>][ \t]+/gm, pad)
+    .replace(/^[ \t]*\d+[.)][ \t]+/gm, pad)
+    .replace(/^```\w*$/gm, pad)
+    // Link and emphasis syntax, keeping the text between the markers.
+    .replace(/\[\[([^\]|\n]+)(\|[^\]\n]*)?\]\]/g, (_m, target: string, alias?: string) =>
+      alias ? '  ' + ' '.repeat(target.length) + ' ' + alias.slice(1) + '  ' : '  ' + target + '  ',
+    )
+    .replace(/\*\*|~~|==|\*|_|`/g, pad);
+}
+
+/**
+ * Collapse runs of whitespace, remapping highlight ranges onto the result.
+ *
+ * Offsets are tracked per character rather than recomputed, because the ranges
+ * were derived from the original text and there is no way to re-find them once
+ * the string has been rewritten.
+ */
+function collapseWhitespace(text: string, ranges: Highlight[]): { text: string; highlights: Highlight[] } {
+  const isWs = (c: string) => c === ' ' || c === '\n' || c === '\t' || c === '\r';
+  const map = new Int32Array(text.length + 1);
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    map[i] = out.length;
+    const c = text[i];
+    if (isWs(c)) {
+      if (out.length > 0 && !out.endsWith(' ')) {
+        // Blanked syntax leaves gaps that would otherwise strand a space before
+        // punctuation — "[[Budget 2026]]." must not render as "Budget 2026 .".
+        let j = i;
+        while (j < text.length && isWs(text[j])) j++;
+        if (!(j < text.length && /[.,;:!?)\]]/.test(text[j]))) out += ' ';
+      }
+    } else {
+      out += c;
+    }
+  }
+  map[text.length] = out.length;
+
+  const trimmedStart = out.length - out.trimStart().length;
+  const highlights = ranges
+    .map((h) => ({ start: map[h.start] - trimmedStart, end: map[h.end] - trimmedStart }))
+    .filter((h) => h.end > h.start);
+  return { text: out.trim(), highlights };
+}
+
+/**
  * A window of the body centred on the densest cluster of matches, with
  * highlight ranges rebased onto the returned string.
  */
@@ -574,12 +632,19 @@ export function snippetFor(body: string, surfaces: Set<string>): { text: string;
   const hits = highlightRanges(body, surfaces);
   if (hits.length === 0) return { text: preview(body), highlights: [] };
 
+  // Prefer a window below the title line. The row already shows the title, so
+  // an excerpt that just repeats it tells the reader nothing new — but fall
+  // back to it when the title is the only place the words appear.
+  const titleEnd = body.indexOf('\n');
+  const belowTitle = titleEnd < 0 ? [] : hits.filter((h) => h.start > titleEnd);
+  const candidates = belowTitle.length > 0 ? belowTitle : hits;
+
   // Slide a window over the hits and keep the one covering the most.
-  let best = { start: hits[0].start, count: 0 };
-  for (let i = 0; i < hits.length; i++) {
+  let best = { start: candidates[0].start, count: 0 };
+  for (let i = 0; i < candidates.length; i++) {
     let count = 0;
-    for (let j = i; j < hits.length && hits[j].end - hits[i].start <= SNIPPET_LEN; j++) count++;
-    if (count > best.count) best = { start: hits[i].start, count };
+    for (let j = i; j < candidates.length && candidates[j].end - candidates[i].start <= SNIPPET_LEN; j++) count++;
+    if (count > best.count) best = { start: candidates[i].start, count };
   }
 
   let from = Math.max(0, best.start - 32);
@@ -588,17 +653,22 @@ export function snippetFor(body: string, surfaces: Set<string>): { text: string;
   let to = Math.min(body.length, from + SNIPPET_LEN);
   while (to < body.length && /[\p{L}\p{N}]/u.test(body[to])) to++;
 
-  const raw = body.slice(from, to);
+  // Slice the blanked text, not the raw text, so a snippet never shows "- [x]"
+  // or "[[" to the reader. Offsets are unchanged by blanking.
+  const window = blankMarkup(body).slice(from, to);
+  const inWindow = hits
+    .filter((h) => h.start >= from && h.end <= to)
+    .map((h) => ({ start: h.start - from, end: h.end - from }));
+
+  const collapsed = collapseWhitespace(window, inWindow);
   const lead = from > 0 ? '…' : '';
   const tail = to < body.length ? '…' : '';
 
-  // Collapse newlines for display, keeping the character count stable so the
-  // rebased highlight offsets stay correct.
-  const text = lead + raw.replace(/\n/g, ' ') + tail;
-  const shift = lead.length - from;
-  const highlights = hits
-    .filter((h) => h.start >= from && h.end <= to)
-    .map((h) => ({ start: h.start + shift, end: h.end + shift }));
-
-  return { text, highlights };
+  return {
+    text: lead + collapsed.text + tail,
+    highlights: collapsed.highlights.map((h) => ({
+      start: h.start + lead.length,
+      end: h.end + lead.length,
+    })),
+  };
 }

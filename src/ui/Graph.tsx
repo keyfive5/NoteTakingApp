@@ -16,6 +16,17 @@ import { radius, space, type Palette } from './theme.ts';
 /** Nodes drawn at once. Beyond this the picture stops being readable. */
 const MAX_NODES = 90;
 
+const LABEL_SIZE = 10.5;
+
+/**
+ * Rough half-width of a rendered label. SVG text cannot be measured before it
+ * is drawn, and an estimate is enough to keep a label from running off the
+ * edge of the canvas.
+ */
+function labelHalfWidth(label: string): number {
+  return (label.length * LABEL_SIZE * 0.5) / 2;
+}
+
 export function Graph({
   palette: p,
   notes,
@@ -145,9 +156,12 @@ export function Graph({
                     />
                     {pn.weight > 0 || positions.length < 26 ? (
                       <SvgText
-                        x={pn.x}
+                        // Labels are centred on the node, so one near the edge
+                        // would run off the canvas. Nudge it back inside using
+                        // an estimate of its rendered half-width.
+                        x={Math.min(width - labelHalfWidth(label) - 4, Math.max(labelHalfWidth(label) + 4, pn.x))}
                         y={pn.y + r + 12}
-                        fontSize={10.5}
+                        fontSize={LABEL_SIZE}
                         fill={p.textDim}
                         textAnchor="middle"
                         onPress={() => onOpen(pn.id)}

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+// Aliased: `preview` is already the name of this sheet's selected-version state.
+import { preview as excerpt } from '../core/search/engine.ts';
 import type { StoredVersion } from '../core/store/serialize.ts';
 import type { Settings, SortKey } from '../core/types.ts';
 import { wordCount } from '../core/types.ts';
@@ -119,7 +121,9 @@ export function HistorySheet({
                     {delta !== null && delta !== 0 ? ` · ${delta > 0 ? '+' : ''}${delta}` : ''}
                   </Text>
                   <Text style={s.versionPreview} numberOfLines={1}>
-                    {v.body.replace(/\s+/g, ' ').trim() || '(empty)'}
+                    {/* Strip the markup: a history row is for recognising a
+                        version at a glance, not for reading its source. */}
+                    {excerpt(v.body) || v.title || '(empty)'}
                   </Text>
                 </View>
                 <Icon name="chevron" size={16} color={p.textFaint} />

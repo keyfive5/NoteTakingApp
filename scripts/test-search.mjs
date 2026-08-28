@@ -137,6 +137,48 @@ describe('listing mode', () => {
   ok(all[0].snippet.length > 0, 'listings still carry a preview');
 });
 
+describe('snippets hide markup but keep highlights exact', () => {
+  // Snippets are sliced out of the raw body, so without care they show the
+  // reader "- [x]" and "[[". Blanking must not move the highlight offsets.
+  const cases = [
+    ['# Heading with sourdough inside', 'sourdough'],
+    ['- [ ] buy sourdough today', 'sourdough'],
+    ['- [x] bought sourdough already', 'sourdough'],
+    ['> quoting sourdough here', 'sourdough'],
+    ['1. numbered sourdough item', 'sourdough'],
+    ['some **bold sourdough** text', 'sourdough'],
+    ['link to [[sourdough starter]] here', 'sourdough'],
+    ['aliased [[starter|the sourdough one]] here', 'sourdough'],
+    ['a `sourdough` code span', 'sourdough'],
+    ['==highlighted sourdough== text', 'sourdough'],
+  ];
+  for (const [body, term] of cases) {
+    const r = snippetFor(body, new Set([term]));
+    const marked = r.highlights.map((h) => r.text.slice(h.start, h.end));
+    eq(marked, [term], `offsets exact in: ${body}`);
+    ok(!/\[\[|\]\]|^#|\[[ xX]\]/.test(r.text), `markup hidden in: ${body} -> "${r.text}"`);
+  }
+  eq(snippetFor('a  \n\n  b sourdough', new Set(['sourdough'])).text, 'a b sourdough', 'whitespace collapsed');
+});
+
+describe('snippet window prefers the body over the title', () => {
+  const body = '# Sourdough starter\n\nFeed the sourdough every morning.';
+  const r = snippetFor(body, new Set(['sourdough']));
+  ok(r.text.includes('every morning'), 'shows body context rather than repeating the title');
+  const marked = r.highlights.map((h) => r.text.slice(h.start, h.end).toLowerCase());
+  ok(marked.length > 0 && marked.every((m) => m === 'sourdough'), 'highlights stay exact');
+
+  // When the word appears only in the title, fall back to it rather than
+  // returning an excerpt with no match in it.
+  const only = snippetFor('# Sourdough starter\n\nNothing else here.', new Set(['sourdough']));
+  ok(only.text.toLowerCase().includes('sourdough'), 'falls back to the title line');
+
+  // A blanked wikilink must not strand a space before punctuation.
+  const punct = snippetFor('Title\n\nSee [[Budget 2026]]. Also sourdough.', new Set(['sourdough', 'budget']));
+  ok(!punct.text.includes(' .'), `no space before a period: "${punct.text}"`);
+  ok(!punct.text.includes('[['), 'brackets removed');
+});
+
 describe('snippets and highlights', () => {
   const r = run('sourdough')[0];
   ok(r.titleHighlights.length > 0, 'title highlight present');

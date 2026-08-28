@@ -98,6 +98,43 @@ describe('hub placement', () => {
   eq(hub.weight, 10, 'hub degree');
 });
 
+describe('a cluster among orphans stays readable', () => {
+  // The shape that actually broke: a few linked notes surrounded by unlinked
+  // ones. Letting the simulation run free and rescaling to fit at the end sent
+  // the orphans thousands of pixels out, and the rescale then crushed the
+  // cluster to 8px across — every label on top of every other.
+  const ids = ['a', 'b', 'c', 'd', 'o1', 'o2', 'o3', 'o4', 'o5', 'o6'];
+  const edges = [
+    { from: 'c', to: 'a' }, { from: 'c', to: 'b' },
+    { from: 'd', to: 'a' }, { from: 'a', to: 'b' },
+  ];
+  const out = layoutGraph(ids, edges, { width: 440, height: 766 });
+  const at = (id) => out.find((n) => n.id === id);
+
+  let closest = Infinity;
+  for (let i = 0; i < out.length; i++) {
+    for (let j = i + 1; j < out.length; j++) closest = Math.min(closest, dist(out[i], out[j]));
+  }
+  ok(closest > 40, `nodes stay legibly apart (${closest.toFixed(0)}px)`);
+
+  const cluster = ['a', 'b', 'c', 'd'].map(at);
+  let widest = 0;
+  for (let i = 0; i < cluster.length; i++) {
+    for (let j = i + 1; j < cluster.length; j++) widest = Math.max(widest, dist(cluster[i], cluster[j]));
+  }
+  ok(widest > 120, `the cluster occupies real space (${widest.toFixed(0)}px across)`);
+
+  // The linked notes are the point of the screen, so they belong near the middle.
+  const centroid = {
+    x: cluster.reduce((s, n) => s + n.x, 0) / 4,
+    y: cluster.reduce((s, n) => s + n.y, 0) / 4,
+  };
+  const off = dist(centroid, { x: 220, y: 383 });
+  ok(off < 110, `the linked cluster sits near the centre (${off.toFixed(0)}px off)`);
+
+  ok(out.every((n) => n.x >= 34 && n.x <= 406 && n.y >= 34 && n.y <= 732), 'all within the frame margin');
+});
+
 describe('performance', () => {
   const { ids, edges } = chain(90);
   const t = Date.now();
