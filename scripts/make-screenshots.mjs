@@ -16,10 +16,15 @@ import { mkdirSync } from 'node:fs';
 const BASE = 'http://localhost:8097';
 const OUT = 'store/screenshots';
 
-// Apple asks for a 6.9 inch and a 6.5 inch iPhone.
+// Apple asks for a 6.9 inch and a 6.5 inch iPhone, and — because the app
+// declares tablet support — a 12.9 inch iPad Pro as well. Without the iPad set
+// the submission is rejected with SCREENSHOT_REQUIRED.APP_IPAD_PRO_3GEN_129.
 const DEVICES = [
-  { name: '6.9', width: 1320, height: 2868, css: [440, 956] },
-  { name: '6.5', width: 1242, height: 2688, css: [414, 896] },
+  { name: '6.9', width: 1320, height: 2868, css: [440, 956], scale: 3, radius: 0.075 },
+  { name: '6.5', width: 1242, height: 2688, css: [414, 896], scale: 3, radius: 0.075 },
+  // A tablet's corner radius is far smaller relative to its width; reusing the
+  // phone value clipped the app's own header inside the rounded corner.
+  { name: 'ipad', width: 2048, height: 2732, css: [1024, 1366], scale: 2, radius: 0.022 },
 ];
 
 const BG = '#141311';
@@ -186,7 +191,7 @@ try {
     await page.setViewport({
       width: device.css[0],
       height: device.css[1],
-      deviceScaleFactor: 3,
+      deviceScaleFactor: device.scale,
       isMobile: true,
       hasTouch: true,
     });
@@ -225,7 +230,7 @@ try {
         .composite([
           {
             input: Buffer.from(
-              `<svg width="${meta.width}" height="${meta.height}"><rect width="${meta.width}" height="${meta.height}" rx="${Math.round(meta.width * 0.075)}" fill="#fff"/></svg>`,
+              `<svg width="${meta.width}" height="${meta.height}"><rect width="${meta.width}" height="${meta.height}" rx="${Math.round(meta.width * device.radius)}" fill="#fff"/></svg>`,
             ),
             blend: 'dest-in',
           },

@@ -17,6 +17,7 @@ const DIR = path.join(ROOT, 'store', 'screenshots');
 const SETS = [
   { prefix: '6.9', displayType: 'APP_IPHONE_67', label: 'large iPhone (6.7 / 6.9 inch)' },
   { prefix: '6.5', displayType: 'APP_IPHONE_65', label: '6.5-inch iPhone' },
+  { prefix: 'ipad', displayType: 'APP_IPAD_PRO_3GEN_129', label: '12.9-inch iPad Pro' },
 ];
 
 async function editableLocalization() {
@@ -104,6 +105,17 @@ async function uploadOne(setId, file) {
       continue;
     }
     const setId = await ensureSet(localizationId, set.displayType);
+
+    // Clear whatever is already in the set. Uploading is purely additive, so a
+    // second run silently appends a duplicate of every shot and leaves the
+    // store page showing them out of order — and neither deleting nor
+    // reordering is allowed once the version has been submitted.
+    const current = await api('GET', `/v1/appScreenshotSets/${setId}/appScreenshots?limit=20`);
+    for (const old of current.data) {
+      await api('DELETE', `/v1/appScreenshots/${old.id}`);
+    }
+    if (current.data.length) console.log(`   cleared ${current.data.length} existing`);
+
     console.log(`• ${set.label} (${set.displayType}) — ${files.length} screenshots`);
     for (const f of files) {
       const id = await uploadOne(setId, path.join(DIR, f));

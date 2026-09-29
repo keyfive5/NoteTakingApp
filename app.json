@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#FBFAF7"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hasanzafar.sift",
@@ -32,7 +34,11 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -47,11 +53,11 @@
         }
       ]
     ],
+    "owner": "keyfive",
     "extra": {
       "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
+        "projectId": "fcb4fb2a-cb00-43a8-9428-2a6891b9eadb"
       }
-    },
-    "owner": "keyfive"
+    }
   }
 }

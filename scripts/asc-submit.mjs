@@ -8,23 +8,36 @@ const APP = appId();
 const TARGET_VERSION = '1.0.0';
 const TARGET_BUILD = '1';
 
-const REVIEW_NOTES = `QR Forge generates and reads QR codes entirely on-device.
+const REVIEW_NOTES = `Sift is a notes app that runs entirely on the device.
 
-No account or login is needed — the app opens straight into the generator.
+No account or login is needed. The app opens straight into the notes list and
+is fully usable the moment it launches.
 
-The app makes no network requests of any kind. There is no server, no
-analytics and no advertising SDK.
+There is nothing to purchase. No subscription, no paid tier, no advertising,
+and no note limit.
+
+The app makes no network requests of any kind. There is no server, no sync,
+no analytics and no third-party SDK that transmits data. Notes are written as
+plain Markdown files inside the app's own Documents directory.
 
 Permissions:
-• Camera — used only by the Scan tab, to read a QR code. The app shows the
-  decoded destination and waits for the user to tap before opening anything.
-• Photo library (read) — used only when the user chooses to place their own
-  logo in the middle of a code.
-• Photo library (add) — used only when the user taps "Save PNG" to save a
-  code they made.
+- Face ID (NSFaceIDUsageDescription) - used only if the reviewer chooses to
+  lock an individual note, via the "..." menu inside a note. iOS performs the
+  check and returns only success or failure. If no biometrics are enrolled the
+  app simply opens the note, so this can never block review.
 
-Source code, including the QR engine and its test suite:
-https://github.com/keyfive5/QR-Code-Generator`;
+Suggested walkthrough:
+1. Tap the + button and type a few lines, for example "Meeting notes" then
+   "- [ ] send the deck". Lists continue themselves on Return.
+2. Tap the back arrow, then type a deliberately misspelled word into the
+   search field, such as "meting". The note is still found, and the matching
+   words are highlighted in the result.
+3. Type "[[" inside a note to link it to another note, then open the
+   Connections icon in the top right to see the link graph.
+4. Open any note and tap the clock icon to see its full version history.
+
+Contact: hzafar300@gmail.com
+`;
 
 async function editableVersion() {
   const versions = await api('GET', `/v1/apps/${APP}/appStoreVersions?limit=10`);

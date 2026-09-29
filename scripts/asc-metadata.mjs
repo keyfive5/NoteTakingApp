@@ -75,12 +75,12 @@ async function appInfo() {
         type: 'appInfos',
         id: editable.id,
         relationships: {
-          primaryCategory: { data: { type: 'appCategories', id: 'UTILITIES' } },
-          secondaryCategory: { data: { type: 'appCategories', id: 'PRODUCTIVITY' } },
+          primaryCategory: { data: { type: 'appCategories', id: M.PRIMARY_CATEGORY } },
+          secondaryCategory: { data: { type: 'appCategories', id: M.SECONDARY_CATEGORY } },
         },
       },
     });
-    console.log('• categories set: Utilities / Productivity');
+    console.log(`• categories set: ${M.PRIMARY_CATEGORY} / ${M.SECONDARY_CATEGORY}`);
   } catch (e) {
     console.log('• categories not set:', e.message.split('\n')[0]);
   }
@@ -98,6 +98,9 @@ const BOOLEAN_KEYS = new Set([
 const SKIP_KEYS = new Set([
   'kidsAgeBand', 'ageRatingOverride', 'ageRatingOverrideV2', 'koreaAgeRatingOverride',
   'developerAgeRatingInfoUrl',
+  // Korea's GRAC classification number is only accepted alongside a non-NONE
+  // koreaAgeRatingOverride, which we deliberately do not set.
+  'gracRatingClassificationNumber',
 ]);
 
 async function ageRating(appInfoId) {
